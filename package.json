@@ -1,0 +1,14 @@
+{
+  "name": "claude-code-dsk",
+  "version": "1.0.0",
+  "type": "module",
+  "devDependencies": {
+    "tsx": "^4.20.5"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.0"
+  },
+  "scripts": {
+    "tsx": "npx tsx test.ts"
+  }
+}

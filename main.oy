@@ -1,0 +1,12 @@
+from claude_code import ClaudeCode
+
+# クライアントの初期化
+client = ClaudeCode(api_key="your-api-key")  # 環境変数を使用する場合はapi_keyは省略可
+
+# コード生成の例
+response = client.generate_code(
+    prompt="Pythonで簡単な計算機を作って",
+    language="python"
+)
+
+print(response)
