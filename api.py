@@ -56,6 +56,8 @@ async def chat_with_ai(query_data: ChatQuery): # asyncで非同期処理なの�
         messages = []
         session_id = None
 
+        # ストリーミング形式である必要がないので、for文で回す必要ない変更必要かも
+        # queryメソッドで、リクエストし、messageを受ける
         async for message in query(prompt=query_data.query, options=options):
             messages.append(message)
             print(f"受信メッセージ: {message}")
@@ -69,7 +71,8 @@ async def chat_with_ai(query_data: ChatQuery): # asyncで非同期処理なの�
                     session_id = message.data['session_id']
                     print(f"データからセッションID取得: {session_id}")
 
-        # レスポンステキストを構築
+        # レスポンステキストを連結していく
+        # messageの中にcontentが含まれるので、繋ぎ合わせていく
         response_text = ""
         for message in messages:
             if hasattr(message, 'content'):
@@ -77,8 +80,9 @@ async def chat_with_ai(query_data: ChatQuery): # asyncで非同期処理なの�
                     if hasattr(block, 'text'):
                         response_text += block.text
 
-        # セッションIDの決定：継続セッションの場合は指定されたID、新規の場合は生成されたID
-        final_session_id = query_data.resume_session if query_data.resume_session else session_id
+        # 既存セッション: セッション指定された場合、それを返す新規の場合は生成されたID
+        # 新規セッション: session_idを返す
+        final_session_id = query_data.resume_session if query_data.resume_session else session_id #最後に受信したメッセージのsession_idなので、不安定になってるかも
 
         return JSONResponse(content={
             "request_id": request_id,
@@ -86,7 +90,7 @@ async def chat_with_ai(query_data: ChatQuery): # asyncで非同期処理なの�
             "query": query_data.query,
             "response": response_text,
             "is_continuation": bool(query_data.resume_session),  # 継続セッションかどうかを示す
-            "messages": [msg.dict() if hasattr(msg, 'dict') else str(msg) for msg in messages]  # デバッグ用
+            # "messages": [msg.dict() if hasattr(msg, 'dict') else str(msg) for msg in messages]  # デバッグ用
         })
 
     except Exception as e:
