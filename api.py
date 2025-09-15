@@ -1,4 +1,3 @@
-# server2.py - シンプルなAIチャットAPI
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -8,23 +7,36 @@ from typing import Optional
 
 app = FastAPI(title="AI チャット API", description="Claude AIとのシンプルなチャット")
 
+# データモデル定義
+# FastAPIが：
+# 1.HTTPボディからJSONを読み取り
+# 2.ChatQueryオブジェクトに変換
+# 3.関数の引数query_dataとして渡す
 class ChatQuery(BaseModel):
     query: str
-    request_id: Optional[str] = None  # オプションでリクエストUUIDを受け取る
-    claude_uuid: Optional[str] = None  # オプションでClaude UUIDを受け取る
-    resume_session: Optional[str] = None  # セッションを再開するためのsession_id
+    request_id: Optional[str] = None # 個別のリクエストを追跡するため
+    resume_session: Optional[str] = None  # セッションを再開するためのclaude codeが生成したid
 
-@app.post("/api/chat")
-async def chat_with_ai(query_data: ChatQuery):
-    """Claude AIとチャット"""
-    # UUIDが指定されていない場合は自動生成
-    request_id = query_data.request_id or str(uuid.uuid4())
+# ヘルスチェックAPI
+# curl http://localhost:8002/health
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
 
-    if not query_data.query.strip():
+# メインチャットAPI
+# curl -X POST "http://localhost:8002/api/chat" \
+#      -H "Content-Type: application/json" \
+#      -d '{"query": "私の名前を覚えていますか？", "resume_session": "前のsession_id"}'
+@app.post("/api/chat") # このデコレータでルーティング登録し、受け付けられるようにする
+async def chat_with_ai(query_data: ChatQuery): # asyncで非同期処理なので、レスが早く平行処理も可能
+
+    # 準備
+    request_id = query_data.request_id or str(uuid.uuid4()) # request_idの生成
+    if not query_data.query.strip(): # queryが空なら、400を返す
         raise HTTPException(status_code=400, detail="質問が空です")
 
+    # 処理
     try:
-        # Claude Code SDKのオプション設定
         options = ClaudeCodeOptions(
             system_prompt="あなたは親切なAIアシスタントです。質問に丁寧に答えてください。",
             max_turns=10
@@ -80,17 +92,4 @@ async def chat_with_ai(query_data: ChatQuery):
     except Exception as e:
         print(f"エラー詳細: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI応答エラー: {str(e)}")
-
-@app.get("/health")
-async def health_check():
-    """ヘルスチェック"""
-    return {"status": "ok"}
-
-if __name__ == "__main__":
-    import uvicorn
-    print("🤖 AIチャットサーバー起動中...")
-    print("📱 http://localhost:8002/api/chat にPOSTで質問を送信")
-    print("🔄 会話継続機能付き（resume_session パラメータを使用）")
-    uvicorn.run("server2:app", host="0.0.0.0", port=8002, reload=True)
-
 
