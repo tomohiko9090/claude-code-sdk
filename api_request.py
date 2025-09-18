@@ -5,8 +5,6 @@ from claude_code_sdk import query, ClaudeCodeOptions
 import uuid
 from typing import Optional
 
-app = FastAPI(title="AI チャット API", description="Claude AIとのシンプルなチャット")
-
 # データモデル定義
 # FastAPIが：
 # 1.HTTPボディからJSONを読み取り
